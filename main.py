@@ -1,9 +1,9 @@
-import os
+﻿import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import OpenAI
 
-app = FastAPI(title="Olivia AI Assistant", version="1.0.0")/
+app = FastAPI(title="Olivia AI Assistant", version="1.0.0")
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
@@ -27,7 +27,7 @@ async def process_command(payload: CommandRequest):
             messages=[
                 {
                     "role": "system", 
-                    "content": "You are Olivia, an autonomous AI assistant operating a user's laptop. Analyze the user's request and categorize it into a JSON structure with action_type (e.g., OPEN_APP, FILE_SEARCH, VS_CODE_ACTION, TERMINAL_EXEC) and parameters."
+                    "content": "You are Olivia, an autonomous AI assistant operating a user's laptop. Analyze the user's request and return ONLY a JSON object with 'action_type' (must be one of: OPEN_APP, FILE_SEARCH, VS_CODE_ACTION, TERMINAL_EXEC) and 'parameters' (an object containing keys like 'file_name', 'app_name', 'command', or 'query')."
                 },
                 {"role": "user", "content": user_command}
             ],
