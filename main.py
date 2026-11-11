@@ -3,9 +3,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import OpenAI
 
-app = FastAPI(title="Olivia AI Assistant", version="1.0.0")
+app = FastAPI(title="Olivia AI Assistant", version="1.0.0")/
 
-# Initialize OpenAI client (it will look for OPENAI_API_KEY environment variable)
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 class CommandRequest(BaseModel):
@@ -20,10 +19,9 @@ async def process_command(payload: CommandRequest):
     user_command = payload.command
     
     if not client.api_key:
-        raise HTTPException(status_code=500, status_code_detail="OpenAI API key not configured on backend.")
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured on backend.")
     
     try:
-        # Ask the LLM to interpret the user's command and map it to an action type
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
