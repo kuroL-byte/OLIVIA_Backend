@@ -1,35 +1,48 @@
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import requests
+from openai import OpenAI
 
 app = FastAPI(title="Olivia AI Assistant", version="1.0.0")
+
+# Initialize OpenAI client (it will look for OPENAI_API_KEY environment variable)
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 class CommandRequest(BaseModel):
     command: str
 
 @app.get("/")
 async def root():
-    return {"status": "online", "agent": "Olivia", "mode": "free-tier"}
+    return {"status": "online", "agent": "Olivia", "brain": "GPT-4o-mini"}
 
 @app.post("/olivia/process")
 async def process_command(payload: CommandRequest):
     user_command = payload.command
     
-    # For now, we will structure the intent processing. 
-    # In the next step, we will connect this to an LLM API.
-    print(f"Received command for Olivia: {user_command}")
+    if not client.api_key:
+        raise HTTPException(status_code=500, status_code_detail="OpenAI API key not configured on backend.")
     
-    return {
-        "status": "success",
-        "interpreted_command": user_command,
-        "action_payload": {
-            "target": "laptop_client",
-            "command_type": "os_execution",
-            "payload": f"Simulated execution for: {user_command}"
+    try:
+        # Ask the LLM to interpret the user's command and map it to an action type
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are Olivia, an autonomous AI assistant operating a user's laptop. Analyze the user's request and categorize it into a JSON structure with action_type (e.g., OPEN_APP, FILE_SEARCH, VS_CODE_ACTION, TERMINAL_EXEC) and parameters."
+                },
+                {"role": "user", "content": user_command}
+            ],
+            response_format={"type": "json_object"}
+        )
+        
+        llm_output = response.choices[0].message.content
+        
+        return {
+            "status": "success",
+            "original_command": user_command,
+            "structured_action": llm_output
         }
-    }
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
