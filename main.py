@@ -5,23 +5,32 @@ from openai import OpenAI
 
 app = FastAPI(title="Olivia AI Assistant", version="1.0.0")
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
 class CommandRequest(BaseModel):
     command: str
 
 @app.get("/")
 async def root():
-    return {"status": "online", "agent": "Olivia", "brain": "GPT-4o-mini"}
+    has_key = bool(os.environ.get("OPENAI_API_KEY"))
+    return {
+        "status": "online",
+        "agent": "Olivia",
+        "brain": "GPT-4o-mini",
+        "api_key_configured": has_key
+    }
 
 @app.post("/olivia/process")
 async def process_command(payload: CommandRequest):
     user_command = payload.command
+    api_key = os.environ.get("OPENAI_API_KEY")
     
-    if not client.api_key:
-        raise HTTPException(status_code=500, detail="OpenAI API key not configured on backend.")
+    if not api_key:
+        raise HTTPException(
+            status_code=500, 
+            detail="OPENAI_API_KEY is missing in Render Environment Variables."
+        )
     
     try:
+        client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
